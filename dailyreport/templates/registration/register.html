@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="card mx-auto" style="max-width: 400px;">
+    <div class="card-header bg-info text-white">
+      <h4 class="mb-0">{% if request.path == '/accounts/register/' %}Register{% else %}Login{% endif %}</h4>
+    </div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary w-100">
+          {% if request.path == '/accounts/register/' %}Register{% else %}Login{% endif %}
+        </button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

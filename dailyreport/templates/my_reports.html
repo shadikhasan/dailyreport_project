@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+  <h3>📄 My Reports</h3>
+  {% if reports %}
+    {% for report in reports %}
+      <div class="card mb-3 shadow-sm">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+          <span>📅 {{ report.date }}</span>
+          <span>💼 {{ report.role }}</span>
+        </div>
+        <div class="card-body">
+          <p>✅ <strong>Completed:</strong><br> {{ report.completed_tasks|linebreaks }}</p>
+          <p>🔄 <strong>In Progress:</strong><br> {{ report.in_progress|linebreaks }}</p>
+          <p>📅 <strong>Plan Tomorrow:</strong><br> {{ report.plan_tomorrow|linebreaks }}</p>
+          <p>🚧 <strong>Blockers:</strong> {{ report.blockers|default:"None" }}</p>
+          {% if report.links %}
+            <p>🔗 <strong>Links:</strong> 
+              <a href="{{ report.links }}" target="_blank" rel="noopener noreferrer">{{ report.links }}</a>
+            </p>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="alert alert-info">ℹ️ No reports submitted yet.</div>
+  {% endif %}
+  <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mt-3">
+    ← Back to Dashboard
+  </a>
+{% endblock %}

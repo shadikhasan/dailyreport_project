@@ -1,0 +1,27 @@
+{% extends "base.html" %} {% block content %}
+<div class="card">
+  <div class="card-header bg-primary text-white">
+    <h4 class="mb-0">Submit Daily Report</h4>
+  </div>
+  <div class="card-body">
+    <form method="post" novalidate>
+      {% csrf_token %} {% for field in form %}
+      <div class="mb-3">
+        <label class="form-label" for="{{ field.id_for_label }}"
+          >{{ field.label }}</label
+        >
+        {{ field }} {% if field.errors %}
+        <div class="text-danger small">{{ field.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+
+      <button type="submit" class="btn btn-success">Submit</button>
+    </form>
+  </div>
+</div>
+<br />
+<a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mt-3">
+  ← Back to Dashboard
+</a>
+{% endblock %}

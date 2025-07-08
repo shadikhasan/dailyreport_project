@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="container my-4">
+    <h1 class="mb-4">📋 All Reports</h1>
+
+    {% if reports %}
+      <div class="list-group">
+        {% for report in reports %}
+          <div class="list-group-item mb-3 shadow-sm rounded">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h5 class="mb-0">📅 {{ report.date }} - 👤 {{ report.name }}</h5>
+              <small class="text-muted fst-italic">💼 {{ report.role }}</small>
+            </div>
+            <p>✅ <strong>Completed Tasks:</strong><br> {{ report.completed_tasks|linebreaks }}</p>
+            <p>🔄 <strong>In Progress:</strong><br> {{ report.in_progress|linebreaks }}</p>
+            <p>📅 <strong>Plan for Tomorrow:</strong><br> {{ report.plan_tomorrow|linebreaks }}</p>
+            <p>🚧 <strong>Blockers:</strong> {{ report.blockers|default:"None" }}</p>
+            {% if report.links %}
+              <p>🔗 <strong>Links:</strong> 
+                <a href="{{ report.links }}" target="_blank" rel="noopener noreferrer">
+                  {{ report.links }}
+                </a>
+              </p>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="alert alert-info">ℹ️ No reports found.</div>
+    {% endif %}
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mt-3">
+    ← Back to Dashboard
+  </a>
+  
+{% endblock %}
