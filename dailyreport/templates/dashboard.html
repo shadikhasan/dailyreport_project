@@ -1,38 +1,96 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
 {% block content %}
-  <h2>👋 Welcome, {{ user.username }}</h2>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+  .card-gradient {
+    background: linear-gradient(135deg, #3a7bd5 0%, #3a6073 100%);
+  }
+  .card-lift {
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .card-lift:hover {
+    box-shadow: 0 1.5rem 2rem rgba(34, 58, 160, 0.20);
+    transform: translateY(-5px) scale(1.02);
+  }
+  .card-header .bi {
+    font-size: 1.6rem;
+    vertical-align: sub;
+  }
+  @media (max-width: 767.98px) {
+    .display-2 {
+      font-size: 2.5rem;
+    }
+    .card-body {
+      padding: 1.2rem !important;
+    }
+    .btn-lg {
+      font-size: 1rem;
+      padding: 0.8rem 1.2rem;
+    }
+  }
+</style>
 
-  <div class="row my-4">
-    <div class="col-md-4">
-      <div class="card text-bg-primary mb-3">
-        <div class="card-body">
-          <h5 class="card-title">📈 Total Reports</h5>
-          <p class="display-6">{{ total_my_reports }}</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-8">
-      <div class="card">
-        <div class="card-header bg-success text-white">
-          📝 Latest Report
-        </div>
-        <div class="card-body">
-          {% if latest_report %}
-            <p><strong>Date:</strong> {{ latest_report.date }}</p>
-            <p><strong>Role:</strong> {{ latest_report.role }}</p>
-            <p><strong>Completed:</strong> {{ latest_report.completed_tasks|linebreaks }}</p>
-          {% else %}
-            <p>No reports submitted yet.</p>
-          {% endif %}
-        </div>
+<div class="row row-cols-1 row-cols-md-2 gy-4 align-items-stretch">
+  <!-- Total Reports Card -->
+  <div class="col">
+    <div class="card card-gradient border-0 shadow-lg h-100 text-white card-lift">
+      <div class="card-body d-flex flex-column justify-content-center align-items-center">
+        <i class="bi bi-clipboard-data display-4 mb-3"></i>
+        <h5 class="card-title fw-light">Total Reports</h5>
+        <h1 class="display-2 fw-bold">{{ total_my_reports }}</h1>
       </div>
     </div>
   </div>
-
-  <div class="d-flex gap-2">
-    <a href="{% url 'submit-report-page' %}" class="btn btn-success">+ Submit New Report</a>
-    <a href="{% url 'my-reports-page' %}" class="btn btn-primary">📋 My Reports</a>
-    <a href="{% url 'all-reports-page' %}" class="btn btn-secondary">👥 All Reports</a>
+  <!-- Latest Report Card -->
+  <div class="col">
+    <div class="card shadow-lg border-0 h-100 card-lift">
+      <div class="card-header bg-gradient bg-success text-white d-flex align-items-center border-0">
+        <i class="bi bi-file-earmark-text me-2"></i>
+        <span class="fs-5 fw-semibold">Latest Report</span>
+      </div>
+      <div class="card-body bg-light">
+        {% if latest_report %}
+          <div class="mb-3">
+            <span class="badge bg-primary bg-gradient px-3 py-2"><i class="bi bi-calendar-event"></i> Date</span>
+            <span class="ms-2 fs-6">{{ latest_report.date }}</span>
+          </div>
+          <div class="mb-3">
+            <span class="badge bg-info text-dark px-3 py-2"><i class="bi bi-person-badge"></i> Role</span>
+            <span class="ms-2 fs-6">{{ latest_report.role }}</span>
+          </div>
+          <div class="mb-3">
+            <span class="badge bg-success px-3 py-2"><i class="bi bi-check2-circle"></i> Completed</span>
+            <span class="ms-2">{{ latest_report.completed_tasks|truncatechars:60 }}</span>
+          </div>
+          <div class="mt-4 d-flex flex-wrap gap-2">
+            <a href="{% url 'edit-report-page' latest_report.pk %}" class="btn btn-outline-warning btn-sm fw-semibold">
+              <i class="bi bi-pencil-square"></i> Edit
+            </a>
+            <a href="{% url 'my-report-detail-page' latest_report.pk %}" class="btn btn-outline-info btn-sm fw-semibold">
+              <i class="bi bi-eye"></i> Details
+            </a>
+          </div>
+        {% else %}
+          <div class="text-muted text-center py-5">
+            <i class="bi bi-info-circle display-6 mb-2"></i>
+            <div>No report submitted yet.</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
   </div>
+</div>
+
+<div class="mt-5 d-flex flex-wrap gap-3 justify-content-center w-100">
+  <a href="{% url 'submit-report-page' %}" class="btn btn-success btn-lg px-4 shadow-sm mb-2">
+    <i class="bi bi-plus-circle"></i> Submit New Report
+  </a>
+  <a href="{% url 'my-reports-page' %}" class="btn btn-primary btn-lg px-4 shadow-sm mb-2">
+    <i class="bi bi-person-lines-fill"></i> My Reports
+  </a>
+  <a href="{% url 'all-reports-page' %}" class="btn btn-secondary btn-lg px-4 shadow-sm mb-2">
+    <i class="bi bi-people-fill"></i> All Reports
+  </a>
+</div>
 {% endblock %}

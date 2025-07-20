@@ -9,7 +9,7 @@ class DailyReport(models.Model):
     name = models.CharField(max_length=100)
     role = models.CharField(max_length=50)
     completed_tasks = models.TextField()
-    in_progress = models.TextField()
+    in_progress = models.TextField(blank=True)
     blockers = models.TextField(blank=True)
     plan_tomorrow = models.TextField()
     links = models.TextField(blank=True)

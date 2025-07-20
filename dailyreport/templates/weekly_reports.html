@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}Weekly Reports{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<h2 class="mb-4"><i class="bi bi-calendar3-week"></i> Weekly Report Summary</h2>
+{% if weekly_reports %}
+  <div class="accordion" id="weeklyAccordion">
+    {% for week_tuple, reports in weekly_reports.items %}
+      {% with year=week_tuple.0 week=week_tuple.1 %}
+      <div class="accordion-item mb-2">
+        <h2 class="accordion-header" id="heading{{ year }}{{ week }}">
+          <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button"
+                  data-bs-toggle="collapse" data-bs-target="#collapse{{ year }}{{ week }}"
+                  aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}"
+                  aria-controls="collapse{{ year }}{{ week }}">
+            <span class="me-2 fw-bold">
+              <i class="bi bi-calendar-week"></i>
+              Week {{ week }} of {{ year }}
+            </span>
+            <span class="badge bg-primary ms-2">{{ reports|length }} report{{ reports|length|pluralize }}</span>
+          </button>
+        </h2>
+        <div id="collapse{{ year }}{{ week }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}"
+             aria-labelledby="heading{{ year }}{{ week }}" data-bs-parent="#weeklyAccordion">
+          <div class="accordion-body">
+            <ul class="list-group">
+              {% for report in reports %}
+                <li class="list-group-item d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+                  <div>
+                    <span class="badge bg-info text-dark"><i class="bi bi-calendar-event"></i> {{ report.date }}</span>
+                    <span class="badge bg-secondary"><i class="bi bi-person-badge"></i> {{ report.role }}</span>
+                    <span class="ms-2"><i class="bi bi-clipboard-check"></i>
+                      {{ report.completed_tasks.splitlines.0|default:"No completed tasks" | truncatechars:40 }}
+                    </span>
+                  </div>
+                  <div class="mt-2 mt-md-0">
+                    <a href="{% url 'my-report-detail-page' report.pk %}" class="btn btn-outline-info btn-sm">
+                      <i class="bi bi-eye"></i> Details
+                    </a>
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+      {% endwith %}
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="alert alert-warning">No reports found for any week.</div>
+{% endif %}
+{% endblock %}
