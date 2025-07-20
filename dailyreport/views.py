@@ -4,8 +4,16 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from .models import DailyReport
 from .forms import DailyReportForm
-
+from django.db.models import F, ExpressionWrapper, DurationField, Sum
+from django.utils import timezone
+from datetime import timedelta
 from django.shortcuts import redirect
+from django.http import JsonResponse
+from django.utils import timezone
+from django.utils.timezone import now
+from .models import WorkSession
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
 
 def home_redirect(request):
     return redirect('dashboard')
@@ -27,11 +35,37 @@ def register_view(request):
 @login_required
 def dashboard_view(request):
     user = request.user
+
+    # Existing data for dashboard
     total_my_reports = DailyReport.objects.filter(user=user).count()
     latest_report = DailyReport.objects.filter(user=user).order_by('-date').first()
+
+    today = timezone.now().date()
+    today_sessions = WorkSession.objects.filter(user=user, date=today)
+
+    # Calculate total duration of finished sessions (where stop_time is set)
+    finished_sessions = today_sessions.filter(stop_time__isnull=False).annotate(
+        session_duration=ExpressionWrapper(
+            F('stop_time') - F('start_time'),
+            output_field=DurationField()
+        )
+    )
+    total_finished_duration = finished_sessions.aggregate(total=Sum('session_duration'))['total'] or timedelta()
+
+    # Calculate duration of ongoing session (if any)
+    ongoing_session = today_sessions.filter(stop_time__isnull=True).first()
+    ongoing_duration = timedelta()
+    if ongoing_session:
+        ongoing_duration = timezone.now() - ongoing_session.start_time
+
+    # Sum total duration
+    total_duration = total_finished_duration + ongoing_duration
+
     return render(request, 'dashboard.html', {
         'total_my_reports': total_my_reports,
         'latest_report': latest_report,
+        'today_sessions': today_sessions,
+        'total_duration': total_duration,
     })
 
 # --- Submit/Create Daily Report ---
@@ -118,3 +152,68 @@ def weekly_reports_page(request):
         "weekly_reports": weekly_reports
     }
     return render(request, "weekly_reports.html", context)
+
+
+@csrf_exempt
+@login_required
+def start_work_session(request):
+    if request.method == 'POST':
+        # Prevent starting multiple sessions
+        if WorkSession.objects.filter(user=request.user, stop_time__isnull=True).exists():
+            return JsonResponse({'error': 'Session already in progress'}, status=400)
+        
+        WorkSession.objects.create(user=request.user, start_time=timezone.now())
+        return JsonResponse({'message': 'Work session started!'})
+
+@csrf_exempt
+@login_required
+def stop_work_session(request):
+    if request.method == 'POST':
+        session = WorkSession.objects.filter(user=request.user, stop_time__isnull=True).first()
+        if session:
+            session.stop_time = timezone.now()
+            session.save()
+            return JsonResponse({'message': 'Session stopped!', 'duration': str(session.duration)})
+        return JsonResponse({'error': 'No active session'}, status=400)
+
+from django.contrib.auth.models import User
+from .models import WorkSession
+
+def get_users_with_status():
+    users = User.objects.all()
+    today = now().date()
+    user_status = []
+
+    for user in users:
+        # Get today's sessions for the user
+        today_sessions = WorkSession.objects.filter(user=user, start_time__date=today)
+
+        # Sum durations of finished sessions
+        total_duration = timedelta()
+        for session in today_sessions:
+            stop = session.stop_time or now()
+            total_duration += (stop - session.start_time)
+
+        # Check if there's an ongoing session (stop_time=None)
+        active_session = today_sessions.filter(stop_time__isnull=True).first()
+
+        # Get latest DailyReport to get role
+        latest_report = DailyReport.objects.filter(user=user).order_by('-date').first()
+        role = latest_report.role if latest_report else '-'
+        
+        user_status.append({
+            'user': user,
+            'role': role,
+            'is_working': bool(active_session),
+            'start_time': active_session.start_time if active_session else None,
+            'total_working_time': str(total_duration).split('.')[0]  # HH:MM:SS format
+        })
+
+    return user_status
+
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def users_working_status(request):
+    user_status = get_users_with_status()
+    return render(request, 'users_working_status.html', {'user_status': user_status})

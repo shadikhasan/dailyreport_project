@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}User Work Status{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Users Working Status</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>User</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Started At</th>
+            <th>Total Time Today</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for status in user_status %}
+            <tr>
+                <td>{{ status.user.username }}</td>
+                <td>{{ status.role }}</td>
+                <td>
+                    {% if status.is_working %}
+                        <span class="badge bg-success">Working</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Not Working</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if status.start_time %}
+                        {{ status.start_time|date:"H:i:s" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ status.total_working_time|default:"00:00:00" }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

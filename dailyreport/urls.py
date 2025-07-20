@@ -13,4 +13,8 @@ urlpatterns = [
     path('reports/<int:pk>/delete/', delete_report, name='delete-report-page'),
     
     path('reports/weekly/', weekly_reports_page, name='weekly-reports-page'),
+    
+    path('users/status/', users_working_status, name='users-working-status'),
+    path('work-session/start/', start_work_session, name='start-work-session'),
+    path('work-session/stop/', stop_work_session, name='stop-work-session'),
 ]
