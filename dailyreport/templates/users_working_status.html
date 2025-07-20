@@ -12,6 +12,7 @@
             <th>Status</th>
             <th>Started At</th>
             <th>Total Time Today</th>
+            <th>Total This Month</th>
         </tr>
     </thead>
     <tbody>
@@ -33,7 +34,9 @@
                         -
                     {% endif %}
                 </td>
-                <td>{{ status.total_working_time|default:"00:00:00" }}</td>
+                <td>{{ status.total_working_time_today|default:"00:00:00" }}</td>
+                <td>{{ status.total_working_time_month|default:"00:00:00" }}</td>
+
             </tr>
         {% endfor %}
     </tbody>

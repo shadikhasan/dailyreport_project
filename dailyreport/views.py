@@ -7,6 +7,12 @@ from .forms import DailyReportForm
 from django.db.models import F, ExpressionWrapper, DurationField, Sum
 from django.utils import timezone
 from datetime import timedelta
+from django.db.models import Sum, F, ExpressionWrapper, DurationField
+from django.db.models.functions import ExtractWeek, ExtractMonth, ExtractYear
+from django.utils import timezone
+from datetime import timedelta
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
 from django.shortcuts import redirect
 from django.http import JsonResponse
 from django.utils import timezone
@@ -178,38 +184,54 @@ def stop_work_session(request):
 
 from django.contrib.auth.models import User
 from .models import WorkSession
+from django.utils.timezone import now
 
 def get_users_with_status():
     users = User.objects.all()
     today = now().date()
+    start_of_month = today.replace(day=1)
+
     user_status = []
 
     for user in users:
-        # Get today's sessions for the user
+        # Today's sessions
         today_sessions = WorkSession.objects.filter(user=user, start_time__date=today)
 
-        # Sum durations of finished sessions
-        total_duration = timedelta()
+        total_duration_today = timedelta()
         for session in today_sessions:
             stop = session.stop_time or now()
-            total_duration += (stop - session.start_time)
+            total_duration_today += (stop - session.start_time)
 
-        # Check if there's an ongoing session (stop_time=None)
+        # This month's sessions
+        month_sessions = WorkSession.objects.filter(
+            user=user,
+            start_time__date__gte=start_of_month,
+            start_time__date__lte=today
+        )
+
+        total_duration_month = timedelta()
+        for session in month_sessions:
+            stop = session.stop_time or now()
+            total_duration_month += (stop - session.start_time)
+
+        # Active session check
         active_session = today_sessions.filter(stop_time__isnull=True).first()
 
-        # Get latest DailyReport to get role
+        # Latest report for role
         latest_report = DailyReport.objects.filter(user=user).order_by('-date').first()
         role = latest_report.role if latest_report else '-'
-        
+
         user_status.append({
             'user': user,
             'role': role,
             'is_working': bool(active_session),
             'start_time': active_session.start_time if active_session else None,
-            'total_working_time': str(total_duration).split('.')[0]  # HH:MM:SS format
+            'total_working_time_today': str(total_duration_today).split('.')[0],  # HH:MM:SS
+            'total_working_time_month': str(total_duration_month).split('.')[0],  # HH:MM:SS
         })
 
     return user_status
+
 
 from django.contrib.auth.decorators import login_required
 
@@ -217,3 +239,101 @@ from django.contrib.auth.decorators import login_required
 def users_working_status(request):
     user_status = get_users_with_status()
     return render(request, 'users_working_status.html', {'user_status': user_status})
+
+
+@login_required
+def work_hours_summary(request, period):
+    user = request.user
+    sessions = WorkSession.objects.filter(user=user)
+
+    sessions = sessions.annotate(
+        session_duration=ExpressionWrapper(
+            F('stop_time') - F('start_time'),
+            output_field=DurationField()
+        )
+    )
+
+    if period == 'weekly':
+        grouped = sessions.values('start_time__year', 'start_time__week').annotate(
+            total_duration=Sum('session_duration')
+        )
+        summary_data = [
+            {
+                'year': g['start_time__year'],
+                'week': g['start_time__week'],
+                'total_duration': g['total_duration'],
+                'formatted_duration': str(g['total_duration']) if g['total_duration'] else "00:00:00"
+            } for g in grouped
+        ]
+    elif period == 'monthly':
+        grouped = sessions.values('start_time__year', 'start_time__month').annotate(
+            total_duration=Sum('session_duration')
+        )
+        summary_data = [
+            {
+                'year': g['start_time__year'],
+                'month': g['start_time__month'],
+                'total_duration': g['total_duration'],
+                'formatted_duration': str(g['total_duration']) if g['total_duration'] else "00:00:00"
+            } for g in grouped
+        ]
+    else:
+        summary_data = []
+
+    # Total working time till now
+    total_duration_all_time = sessions.aggregate(total=Sum('session_duration'))['total'] or timedelta()
+
+    return render(request, 'work_hours_summary.html', {
+        'period': period,
+        'summary_data': summary_data,
+        'total_duration_all_time': total_duration_all_time
+    })
+    user = request.user
+    sessions = WorkSession.objects.filter(user=user, stop_time__isnull=False)
+
+    # Annotate session duration
+    sessions = sessions.annotate(
+        duration=ExpressionWrapper(
+            F('stop_time') - F('start_time'),
+            output_field=DurationField()
+        )
+    )
+
+    if period == 'weekly':
+        summary_data = sessions.values(
+            year=ExtractYear('start_time'),
+            week=ExtractWeek('start_time')
+        ).annotate(
+            total_duration=Sum('duration')
+        ).order_by('-year', '-week')
+
+        for entry in summary_data:
+            total_seconds = entry['total_duration'].total_seconds()
+            entry['formatted_duration'] = str(timedelta(seconds=total_seconds))
+
+        context = {
+            'summary_data': summary_data,
+            'period': 'weekly',
+        }
+
+    elif period == 'monthly':
+        summary_data = sessions.values(
+            year=ExtractYear('start_time'),
+            month=ExtractMonth('start_time')
+        ).annotate(
+            total_duration=Sum('duration')
+        ).order_by('-year', '-month')
+
+        for entry in summary_data:
+            total_seconds = entry['total_duration'].total_seconds()
+            entry['formatted_duration'] = str(timedelta(seconds=total_seconds))
+
+        context = {
+            'summary_data': summary_data,
+            'period': 'monthly',
+        }
+
+    else:
+        return render(request, '404.html', status=404)
+
+    return render(request, 'work_hours_summary.html', context)

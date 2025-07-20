@@ -17,4 +17,8 @@ urlpatterns = [
     path('users/status/', users_working_status, name='users-working-status'),
     path('work-session/start/', start_work_session, name='start-work-session'),
     path('work-session/stop/', stop_work_session, name='stop-work-session'),
+    
+    
+    path('work-hours/<str:period>/', work_hours_summary, name='work-hours-summary'),
+    
 ]
