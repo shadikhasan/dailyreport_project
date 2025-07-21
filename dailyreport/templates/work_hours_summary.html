@@ -14,64 +14,6 @@
         </span>
     </div>
 
-    <!-- Chart Section -->
-    <h4 class="mt-4">{{ period|title }} Work Hours Chart</h4>
-    <canvas id="workHoursChart" class="my-3" width="600" height="300"></canvas>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        const labels = [
-            {% for entry in summary_data %}
-                {% if period == 'weekly' %}
-                    'Week {{ entry.week }} ({{ entry.year }})',
-                {% elif period == 'monthly' %}
-                    '{{ entry.month }}/{{ entry.year }}',
-                {% endif %}
-            {% endfor %}
-        ];
-
-        const data = [
-            {% for entry in summary_data %}
-                {{ entry.total_duration.total_seconds|default:0 }},
-            {% endfor %}
-        ];
-
-        if (labels.length > 0) {
-            const ctx = document.getElementById('workHoursChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Total Work Time (in Seconds)',
-                        data: data,
-                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    const hours = Math.floor(value / 3600);
-                                    const minutes = Math.floor((value % 3600) / 60);
-                                    return hours + 'h ' + minutes + 'm';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        } else {
-            document.getElementById('workHoursChart').replaceWith(
-                "<p class='text-muted'>No data available for the chart.</p>"
-            );
-        }
-    </script>
 
     <!-- Table Section -->
     <h4 class="mt-5">Detailed Table View</h4>

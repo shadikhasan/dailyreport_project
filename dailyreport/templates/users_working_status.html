@@ -1,44 +1,92 @@
 {% extends 'base.html' %}
+{% load range_tags %}
 {% block title %}User Work Status{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">Users Working Status</h2>
+<div class="container-fluid py-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+        <h2 class="mb-0 fw-bold"><i class="bi bi-people-fill me-2"></i>Users Working Status</h2>
+        <form method="get" class="d-flex gap-2 align-items-end flex-wrap bg-light rounded px-3 py-2 shadow-sm">
+    <div>
+        <label for="month" class="form-label mb-0 small">Month</label>
+        <select name="month" id="month" class="form-select form-select-sm w-auto">
+            {% for m in 1|get_range:12 %}
+                <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>
+                    {{ m|stringformat:"02d" }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="year" class="form-label mb-0 ms-2 small">Year</label>
+        <select name="year" id="year" class="form-select form-select-sm w-auto ms-2">
+            {% for y in 2022|get_range:current_year %}
+                <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn btn-sm btn-primary ms-2">
+        <i class="bi bi-search"></i> Filter
+    </button>
+    <a href="?month={{ current_month }}&year={{ current_year }}" class="btn btn-sm btn-success ms-2">
+        <i class="bi bi-calendar-event"></i> This Month
+    </a>
+        </form>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>User</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Started At</th>
-            <th>Total Time Today</th>
-            <th>Total This Month</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for status in user_status %}
-            <tr>
-                <td>{{ status.user.username }}</td>
-                <td>{{ status.role }}</td>
-                <td>
-                    {% if status.is_working %}
-                        <span class="badge bg-success">Working</span>
-                    {% else %}
-                        <span class="badge bg-secondary">Not Working</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if status.start_time %}
-                        {{ status.start_time|date:"H:i:s" }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-                <td>{{ status.total_working_time_today|default:"00:00:00" }}</td>
-                <td>{{ status.total_working_time_month|default:"00:00:00" }}</td>
+    </div>
 
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th><i class="bi bi-person-fill"></i> User</th>
+                            <th><i class="bi bi-briefcase-fill"></i> Role</th>
+                            <th><i class="bi bi-circle-half"></i> Status</th>
+                            <th><i class="bi bi-clock-history"></i> Started At</th>
+                            <th><i class="bi bi-hourglass-split"></i> Time Today</th>
+                            <th><i class="bi bi-calendar-range-fill"></i> Time This Month</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for status in user_status %}
+                            <tr>
+                                <td class="fw-medium">{{ status.user.username }}</td>
+                                <td class="text-secondary">{{ status.role }}</td>
+                                <td>
+                                    {% if status.is_working %}
+                                        <span class="badge bg-success px-3 py-2"><i class="bi bi-play-circle"></i> Working</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary px-3 py-2"><i class="bi bi-pause-circle"></i> Not Working</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if status.start_time %}
+                                        <span class="text-nowrap">{{ status.start_time|date:"H:i:s" }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="fw-semibold text-primary">{{ status.total_working_time_today|default:"00:00:00" }}</span>
+                                </td>
+                                <td>
+                                    <span class="fw-semibold text-info">{{ status.total_working_time_month|default:"00:00:00" }}</span>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="bi bi-emoji-frown" style="font-size: 2rem;"></i><br>
+                                    No data available.
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

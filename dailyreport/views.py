@@ -186,27 +186,36 @@ from django.contrib.auth.models import User
 from .models import WorkSession
 from django.utils.timezone import now
 
-def get_users_with_status():
+def get_users_with_status(month=None, year=None):
     users = User.objects.all()
     today = now().date()
-    start_of_month = today.replace(day=1)
+    # Default to current month/year
+    if not month:
+        month = today.month
+    if not year:
+        year = today.year
+
+    start_of_month = today.replace(month=month, year=year, day=1)
+    # Calculate last day of the month
+    if month == 12:
+        end_of_month = start_of_month.replace(year=year + 1, month=1, day=1) - timedelta(days=1)
+    else:
+        end_of_month = start_of_month.replace(month=month + 1, day=1) - timedelta(days=1)
 
     user_status = []
 
     for user in users:
-        # Today's sessions
         today_sessions = WorkSession.objects.filter(user=user, start_time__date=today)
-
         total_duration_today = timedelta()
         for session in today_sessions:
             stop = session.stop_time or now()
             total_duration_today += (stop - session.start_time)
 
-        # This month's sessions
+        # Filter by selected month and year
         month_sessions = WorkSession.objects.filter(
             user=user,
             start_time__date__gte=start_of_month,
-            start_time__date__lte=today
+            start_time__date__lte=end_of_month
         )
 
         total_duration_month = timedelta()
@@ -214,10 +223,7 @@ def get_users_with_status():
             stop = session.stop_time or now()
             total_duration_month += (stop - session.start_time)
 
-        # Active session check
         active_session = today_sessions.filter(stop_time__isnull=True).first()
-
-        # Latest report for role
         latest_report = DailyReport.objects.filter(user=user).order_by('-date').first()
         role = latest_report.role if latest_report else '-'
 
@@ -226,20 +232,36 @@ def get_users_with_status():
             'role': role,
             'is_working': bool(active_session),
             'start_time': active_session.start_time if active_session else None,
-            'total_working_time_today': str(total_duration_today).split('.')[0],  # HH:MM:SS
-            'total_working_time_month': str(total_duration_month).split('.')[0],  # HH:MM:SS
+            'total_working_time_today': str(total_duration_today).split('.')[0],
+            'total_working_time_month': str(total_duration_month).split('.')[0],
         })
 
     return user_status
+
 
 
 from django.contrib.auth.decorators import login_required
 
 @login_required
 def users_working_status(request):
-    user_status = get_users_with_status()
-    return render(request, 'users_working_status.html', {'user_status': user_status})
+    try:
+        month = int(request.GET.get('month', now().month))
+        year = int(request.GET.get('year', now().year))
+    except ValueError:
+        month = now().month
+        year = now().year
 
+    user_status = get_users_with_status(month=month, year=year)
+    current_year = now().year
+    current_month = now().month   # <--- Add this
+
+    return render(request, 'users_working_status.html', {
+        'user_status': user_status,
+        'selected_month': month,
+        'selected_year': year,
+        'current_year': current_year,
+        'current_month': current_month,  # <--- Add this
+    })
 
 @login_required
 def work_hours_summary(request, period):
