@@ -25,13 +25,11 @@ SECRET_KEY = 'django-insecure--5d)ya9+y^m%&a-7#(hd%*xn2-z_1_qi8z&8u*8#j_x1ti+%sg
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    'daily-task-antripe.up.railway.app',
-    'localhost',
-    '127.0.0.1',
-    # add any other domains you use
-]
+ALLOWED_HOSTS = ['*']
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://daily-task-antripe.up.railway.app',
+]
 
 # Application definition
 
