@@ -28,7 +28,8 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'daily-task-antripe.up.railway.app',
     'localhost',
-    '127.0.0.1'
+    '127.0.0.1',
+    # add any other domains you use
 ]
 
 
