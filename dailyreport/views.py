@@ -273,4 +273,27 @@ def work_hours_summary(request, period):
         }
     else:
         return render(request, '404.html', status=404)
+    
+    # All completed sessions for the user
+    finished_sessions = WorkSession.objects.filter(user=user, stop_time__isnull=False).annotate(
+        duration=ExpressionWrapper(
+            F('stop_time') - F('start_time'),
+            output_field=DurationField()
+        )
+    )
+
+    # Total duration of all completed sessions
+    total_finished_duration = finished_sessions.aggregate(total=Sum('duration'))['total'] or timedelta()
+
+    # Ongoing session (not finished)
+    ongoing_session = WorkSession.objects.filter(user=user, stop_time__isnull=True).first()
+    ongoing_duration = timedelta()
+    if ongoing_session:
+        ongoing_duration = timezone.now() - ongoing_session.start_time
+
+    # Total (finished + ongoing)
+    total_duration_all_time = total_finished_duration + ongoing_duration
+
+    context['total_duration_all_time'] = total_duration_all_time
+    
     return render(request, 'work_hours_summary.html', context)
