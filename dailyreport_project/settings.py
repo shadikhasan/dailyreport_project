@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure--5d)ya9+y^m%&a-7#(hd%*xn2-z_1_qi8z&8u*8#j_x1ti+%sg
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'dailyreportproject-production.up.railway.app',
+    'daily-task-antripe.up.railway.app',
     'localhost',
     '127.0.0.1'
 ]
