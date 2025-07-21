@@ -29,6 +29,7 @@ ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
     'https://dailyreport-project.onrender.com',
+    'https://daily-task-webapp.up.railway.app',
 ]
 
 # Application definition
