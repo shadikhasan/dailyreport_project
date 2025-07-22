@@ -25,8 +25,7 @@ DEBUG = True
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://dailyreport-project.onrender.com',
-    'https://daily-task-webapp.up.railway.app',
+    'https://daily-report-antripe.up.railway.app',
 ]
 
 # Application definition
